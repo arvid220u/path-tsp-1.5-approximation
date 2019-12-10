@@ -1,0 +1,8 @@
+1110.4604.pdf
+1707.03992.pdf
+__pycache__
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz

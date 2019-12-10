@@ -1,0 +1,55 @@
+\documentclass{article}
+\usepackage[x11names, svgnames, rgb]{xcolor}
+\usepackage[utf8]{inputenc}
+\usepackage{tikz}
+\usetikzlibrary{snakes,arrows,shapes}
+\usepackage{amsmath}
+%
+%
+
+%
+
+%
+
+\begin{document}
+\pagestyle{empty}
+%
+%
+%
+
+\enlargethispage{100cm}
+% Start of code
+\begin{tikzpicture}[>=latex',line join=bevel,]
+%%
+\node (s) at (27.0bp,73.248bp) [draw,ellipse] {s};
+  \node (t0) at (72.104bp,129.15bp) [draw,ellipse] {t0};
+  \node (b0) at (95.774bp,51.568bp) [draw,ellipse] {b0};
+  \node (t) at (332.83bp,169.01bp) [draw,ellipse] {t};
+  \node (t3) at (263.96bp,189.61bp) [draw,ellipse] {t3};
+  \node (b3) at (288.44bp,112.27bp) [draw,ellipse] {b3};
+  \node (t1) at (112.69bp,198.98bp) [draw,ellipse] {t1};
+  \node (t2) at (190.66bp,223.58bp) [draw,ellipse] {t2};
+  \node (b1) at (169.35bp,18.0bp) [draw,ellipse] {b1};
+  \node (b2) at (247.37bp,42.626bp) [draw,ellipse] {b2};
+  \draw [] (s) ..controls (45.847bp,96.607bp) and (53.045bp,105.53bp)  .. (t0);
+  \draw [] (s) ..controls (57.772bp,63.547bp) and (64.597bp,61.396bp)  .. (b0);
+  \draw [] (t) ..controls (301.8bp,178.29bp) and (295.19bp,180.27bp)  .. (t3);
+  \draw [] (t) ..controls (314.28bp,145.3bp) and (307.2bp,136.25bp)  .. (b3);
+  \draw [] (t0) ..controls (88.218bp,156.87bp) and (96.352bp,170.87bp)  .. (t1);
+  \draw [] (t0) ..controls (81.418bp,98.623bp) and (86.496bp,81.977bp)  .. (b0);
+  \draw [] (t1) ..controls (146.55bp,209.66bp) and (156.97bp,212.95bp)  .. (t2);
+  \draw [] (t2) ..controls (222.14bp,208.99bp) and (232.62bp,204.13bp)  .. (t3);
+  \draw [] (t3) ..controls (273.59bp,159.18bp) and (278.84bp,142.58bp)  .. (b3);
+  \draw [] (b0) ..controls (127.38bp,37.15bp) and (137.9bp,32.349bp)  .. (b1);
+  \draw [] (b1) ..controls (203.23bp,28.694bp) and (213.66bp,31.986bp)  .. (b2);
+  \draw [] (b2) ..controls (263.67bp,70.274bp) and (271.9bp,84.23bp)  .. (b3);
+%
+\end{tikzpicture}
+% End of code
+
+%
+\end{document}
+%
+
+
+
