@@ -70,7 +70,7 @@ def try_b_x_star():
     print(B)
 
 def try_get_y():
-    m, e = integrality_gap_ptsp_graph(4)
+    m, e = integrality_gap_ptsp_graph(3)
     p = PathTSPProblem(m, Node('s'), Node('t'))
     x_star = find_x_star(p)
     # print(x_star)
@@ -82,16 +82,95 @@ def try_get_y():
     print(y_star)
     # this is so interesting!!! it find the optimum solution :0000
 
+def try_get_y_2():
+    m, e = y_not_0_graph(3)
+    p = PathTSPProblem(m, Node('s'), Node('t'))
+    x_star = find_x_star(p)
+    # print(x_star)
+    B = find_B(p, x_star)
+    x_star_supp = {d: x_star[d] for d in x_star if x_star[d] != 0}
+    print(x_star_supp)
+    print(B)
+    y_star = get_y(p, B)
+    print(y_star)
+
+def try_get_y_3():
+    m, e = integrality_gap_ptsp_graph_perturbed(3)
+    p = PathTSPProblem(m, Node('s'), Node('t'))
+    x_star = find_x_star(p)
+    # print(x_star)
+    B = find_B(p, x_star)
+    x_star_supp = {d: x_star[d] for d in x_star if x_star[d] != 0}
+    print(x_star_supp)
+    print(B)
+    y_star = get_y(p, B)
+    print(y_star)
+    # this is so interesting!!! it find the optimum solution :0000
+
+def try_k_branch_graph():
+    m, e = k_branch_graph(4, 4)
+    p = PathTSPProblem(m, Node('s'), Node('t'))
+    x_star = find_x_star(p)
+    print(x_star)
+    # B = find_B(p, x_star)
+    # x_star_supp = {d: x_star[d] for d in x_star if x_star[d] != 0}
+    # print(x_star_supp)
+    # print(B)
+    # y_star = get_y(p, B)
+    # print(y_star)
+    # this is so interesting!!! it find the optimum solution :0000
+
+def find_B_of_k_branch():
+    import json
+    with open('t.json','r') as f:
+        x_star_str = json.load(f)
+    # convert x_star_str into actual edges
+    x_star = {}
+    dd = None
+    for k in x_star_str:
+        n1, p2 = k.split('->')
+        n2, w = p2.rstrip(')').split('(')
+        w = int(w)
+        e = Edge(Node(n1),Node(n2),w)
+        x_star[e] = x_star_str[k]
+        dd = e
+    
+    m, e = k_branch_graph(4, 4)
+    p = PathTSPProblem(m, Node('s'), Node('t'))
+
+    B = find_B(p, x_star)
+    x_star_supp = {d: x_star[d] for d in x_star if x_star[d] != 0}
+    print(x_star_supp)
+    print(B)
+
+def try_final():
+    n = 3
+    m, e = final_try_graph(n)
+    p = PathTSPProblem(m, Node('0'), Node(f'{3*n}'))
+    x_star = find_x_star(p)
+    print(x_star)
+    # B = find_B(p, x_star)
+    x_star_supp = {d: x_star[d] for d in x_star if x_star[d] != 0}
+    print(x_star_supp)
+    # print(B)
+    # y_star = get_y(p, B)
+    # print(y_star)
+
+
 if __name__ == '__main__':
     # try_lp()
     # try_hk()
     # try_x_star_hard()
     # try_b_x_star()
-    try_get_y()
+    # try_get_y_3()
+    # try_get_y_2()
     # a = Node(0)
     # b = Node(1)
     # g = MetricGraph([a,b])
     # print(g.nodes())
     # print(a in g.nodes())
+    # try_k_branch_graph()
+    # find_B_of_k_branch()
+    try_final()
     pass
     

@@ -152,6 +152,7 @@ def find_B(pathtsp, x):
     """
     B = set()
     # iterate over all subsets
+    edges = pathtsp.graph.edges()
     for nodeset in powerset(pathtsp.graph.nodes()):
         # only cuts with s in it and t not in it
         if pathtsp.s not in nodeset:
@@ -161,7 +162,6 @@ def find_B(pathtsp, x):
 
         # only cuts such that x(delta(nodeset)) < 3
         this_cut_value = 0
-        edges = pathtsp.graph.edges()
         for i in delta(nodeset, edges):
             this_cut_value += x[edges[i]]
         
@@ -176,22 +176,21 @@ INFTY  = 100000000000
 def get_y(pathtsp, B_family):
     # create a new family
     new_b = list(copy.deepcopy(B_family))
-    new_b.append(tuple())
+    new_b.append(tuple()) # the empty set
     final_b = tuple(pathtsp.graph.nodes())
-    final_e = Edge(pathtsp.t, Node('dummydummy'), 0)
-    value, y_star = get_y_recursive(pathtsp, new_b, final_b, final_e)
+    value, y_star = get_y_recursive(pathtsp, new_b, final_b, pathtsp.t)
     return y_star
 
-def get_y_recursive(pathtsp, B_family, B, e, dp_memo=None):
+def get_y_recursive(pathtsp, B_family, B, t, dp_memo=None):
     """
     finds y recursively, by trying all possible values for where
     the previous 1-cut could be
     """
-    print(f'e: {e}')
     if dp_memo is None:
         dp_memo = {}
-    if (B, e) in dp_memo:
-        return dp_memo[(B,e)]
+    if (B, t) in dp_memo:
+        return dp_memo[(B,t)]
+    print(f"Now considering cut {B} with end node {t} for the first time")
     if len(B) == 0:
         # base case!!!
         return 0, {}
@@ -202,22 +201,27 @@ def get_y_recursive(pathtsp, B_family, B, e, dp_memo=None):
         # check if B_prime is subset of B
         if not set(B_prime) < set(B):
             continue
-        if len({e.n1,e.n2}.intersection(B_prime)) > 0:
+        if t in B_prime:
             continue
         for ei in delta(B_prime, edges, emptyindex = len(edges)-1):
             e_prime = edges[ei]
-            print(f'B: {B} B_prime: {B_prime} e: {e} e_prime: {e_prime}')
+            # print(f'B: {B} B_prime: {B_prime} t: {t} e_prime: {e_prime}')
             # make sure we have a valid chain
             intersectgraph = set(B).difference(set(B_prime))
-            if len({e_prime.n1,e_prime.n2}.intersection(intersectgraph)) == 0:
+            if len({e_prime.n1,e_prime.n2}.intersection(intersectgraph)) != 1:
                 continue
+            e_1 = e_prime.n1
+            e_2 = e_prime.n2
+            if e_1 in intersectgraph:
+                e_1 = e_prime.n2
+                e_2 = e_prime.n1
             # now call dp on this
-            this_val, this_sol = get_y_recursive(pathtsp, B_family, B_prime, e_prime, dp_memo=dp_memo)
+            this_val, this_sol = get_y_recursive(pathtsp, B_family, B_prime, e_1, dp_memo=dp_memo)
             # now solve the LP
             # we need to be careful here because we might have that the start node
             # is equal to the end node. that's fine tho.
-            if {e_prime.n1,e_prime.n2}.intersection({e.n1,e.n2}) == intersectgraph:
-                if len(intersectgraph) != 1:
+            if len(intersectgraph) == 1:
+                if e_2 != t:
                     raise RuntimeError('something very very wrong')
                 # this means we can just use thisAvalue, plus the edge
                 if this_val + e_prime.w < minvalhere:
@@ -233,15 +237,13 @@ def get_y_recursive(pathtsp, B_family, B, e, dp_memo=None):
                 # so what do we do here? create a new metric graph
                 # so we want to create a graph defined on a subset
                 induced_graph = pathtsp.graph.subset_graph(intersectgraph)
-                print(intersectgraph)
-                print(e)
-                print(B_prime)
-                print(e_prime)
-                (s,) = {e_prime.n1, e_prime.n2}.intersection(intersectgraph)
-                (t,) = {e.n1, e.n2}.intersection(intersectgraph)
-                sub_pathtsp = PathTSPProblem(induced_graph, s, t)
-                print(induced_graph)
-                print(pathtsp.graph)
+                # print(intersectgraph)
+                # print(e)
+                # print(B_prime)
+                # print(e_prime)
+                sub_pathtsp = PathTSPProblem(induced_graph, e_2, t)
+                # print(induced_graph)
+                # print(pathtsp.graph)
                 relevant_b_cuts = [set(b).intersection(intersectgraph) for b in B_family if set(b) < set(B) and set(B_prime) < set(b)]
                 y_i = find_x_star(sub_pathtsp, b_cuts=relevant_b_cuts)
 
@@ -259,8 +261,8 @@ def get_y_recursive(pathtsp, B_family, B, e, dp_memo=None):
                         raise RuntimeError('should never happen')
                     minsolhere[e_prime] = 1
 
-    dp_memo[(B, e)] = (minvalhere, copy.deepcopy(minsolhere))
-    return dp_memo[(B, e)]
+    dp_memo[(B, t)] = (minvalhere, copy.deepcopy(minsolhere))
+    return dp_memo[(B, t)]
 
 
 
@@ -284,5 +286,112 @@ def integrality_gap_ptsp_graph(n):
     m = s.to_metric()
     return m, e
 
+def integrality_gap_ptsp_graph_perturbed(n):
+    # look at page 2 of shmoys
+    v = [Node('s'),Node('t')] + [Node(f't{i}') for i in range(n)] + [Node(f'b{i}') for i in range(n)]
+    # t is top row b is bottom row
+    e = [Edge(Node('s'), Node('t0'), 1), Edge(Node('s'),Node('b0'), 0.3), Edge(Node('t0'),Node('b0'), 1)] + \
+        [Edge(Node('t'), Node(f't{n-1}'), 1-0.3), Edge(Node('t'),Node(f'b{n-1}'), 1), Edge(Node(f't{n-1}'),Node(f'b{n-1}'), 1)] + \
+        [Edge(Node(f't{i}'), Node(f't{i+1}'), 1+0.2) for i in range(n-1)] + \
+        [Edge(Node(f'b{i}'), Node(f'b{i+1}'), 1) for i in range(n-1)]
+    s = SimpleGraph(v, e)
+    
+    s.to_dot('ssss.dot')
 
+    m = s.to_metric()
+    return m, e
+
+def y_not_0_graph(n):
+    # look at page 2 of shmoys
+    v = [Node('s'),Node('t')] + [Node(f't{i}') for i in range(n)] + [Node(f'b{i}') for i in range(n)] + \
+        [Node(f'tt{i}') for i in range(n)] + [Node(f'bb{i}') for i in range(n)] + \
+        []
+        # [Node('s1'), Node('s2')]
+    # t is top row b is bottom row
+    e = [Edge(Node('s'), Node('t0'), 1), Edge(Node('s'),Node('b0'), 1), Edge(Node('t0'),Node('b0'), 1)] + \
+        [Edge(Node('t'), Node(f't{n-1}'), 1), Edge(Node('t'),Node(f'b{n-1}'), 1), Edge(Node(f't{n-1}'),Node(f'b{n-1}'), 1)] + \
+        [Edge(Node(f't{i}'), Node(f't{i+1}'), 1) for i in range(n-1)] + \
+        [Edge(Node(f'b{i}'), Node(f'b{i+1}'), 1) for i in range(n-1)] + \
+        [Edge(Node(f'tt{i}'), Node(f'tt{i+1}'), 1) for i in range(n-1)] + \
+        [Edge(Node(f'bb{i}'), Node(f'bb{i+1}'), 1) for i in range(n-1)] + \
+        [Edge(Node('s'), Node('tt0'), 1), Edge(Node('s'),Node('bb0'), 1), Edge(Node('tt0'),Node('bb0'), 1)] + \
+        [Edge(Node('t'), Node(f'tt{n-1}'), 1), Edge(Node('t'),Node(f'bb{n-1}'), 1), Edge(Node(f'tt{n-1}'),Node(f'bb{n-1}'), 1)] + \
+        []
+        # [Edge(Node('s1'), Node('b0'), 1), Edge(Node('s1'),Node('b3'), 1)] + \
+        # [Edge(Node('s2'), Node('t0'), 1), Edge(Node('s2'),Node('t3'), 1)] + \
+        # [Edge(Node('s1'),Node('b1'),1), Edge(Node('s1'),Node('b2'), 1)]
+    s = SimpleGraph(v, e)
+    
+    s.to_dot('ssss.dot')
+
+    m = s.to_metric()
+    return m, e
+
+
+def k_branch_graph(k, n):
+    """
+    create a k-branch graph
+    """
+    v = [Node('s'),Node('t')]
+
+    for c in range(k):
+        for i in range(n):
+            v.append(Node(f'{c}x{i}'))
+    
+    e = []
+
+    # connect s with 0 nodes in full clique
+    left_nodes = [Node('s')] + [Node(f'{c}x0') for c in range(k)]
+    for n1, n2 in itertools.combinations(left_nodes, 2):
+        e.append(Edge(n1, n2, 1)) # use weight 1 for now
+
+    # connect t with n-1 nodes in full clique
+    right_nodes = [Node('t')] + [Node(f'{c}x{n-1}') for c in range(k)]
+    for n1, n2 in itertools.combinations(right_nodes, 2):
+        e.append(Edge(n1, n2, 1)) # use weight 1 for now
+
+    # now connect each branch within itself
+    for c in range(k):
+        for i in range(n-1):
+            e.append(Edge(Node(f'{c}x{i}'),Node(f'{c}x{i+1}'), 1))
+    
+    s = SimpleGraph(v, e)
+    
+    s.to_dot('ssss.dot')
+
+    m = s.to_metric()
+    return m, e
+
+
+def final_try_graph(n):
+    """
+    create graph where hopefully choosing the spanning
+    tree from the optimum LP solution is not very good
+    create 3n+1 nodes
+    """
+    v = [Node(str(i)) for i in range(3*n+1)]
+
+    eps = 0.1
+
+    e = []
+    # straight edges
+    e += [Edge(Node(f'{i}'), Node(f'{i+1}'), 1) for i in range(3*n)]
+
+    # jump-ahead 3 steps
+    w = [1] + [1-eps for i in range(n-2)] + [1]
+    e += [Edge(Node(f'{3*i}'), Node(f'{3*i+3}'), w[i]) for i in range(n)]
+
+    # jump ahead 2 steps
+    e += [Edge(Node(f'{3*i+2}'), Node(f'{3*i+4}'), 1) for i in range(n-1)]
+
+    # final jump ahead for some reason
+    e += [Edge(Node('1'),Node(f'{3*n-1}'),1)]
+
+    # i think this is it
+
+    s = SimpleGraph(v, e)
+    s.to_dot('ssss.dot')
+
+    m = s.to_metric()
+    return m, e
 
