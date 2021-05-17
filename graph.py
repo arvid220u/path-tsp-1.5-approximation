@@ -1,6 +1,7 @@
 import networkx as nx
-
+from typing import *
 class Node:
+    label:str
     def __init__(self, label):
         self.label = label
     
@@ -26,6 +27,9 @@ class Node:
         return self.__str__()
 
 class Edge:
+    n1:int # first node
+    n2:int # second node
+    w:float # weight
     def __init__(self, n1, n2, w):
         self.n1 = n1
         self.n2 = n2
@@ -47,6 +51,9 @@ class Edge:
         return self.__str__()
 
 class SimpleGraph:
+    nodes:List[int]
+    edge_list:List[Edge]
+    infty:int
     def __init__(self, nodes, edge_list):
         self.nodes = nodes
         self.edge_list = []
@@ -91,6 +98,7 @@ class MetricGraph:
     this graph can for example be created from a shortest path
     run in another graph
     """
+    adj_matrix:Dict[int,Dict[int,Edge]]
     def __init__(self, nodes):
         """
         assumes nodes are from 0 to n
